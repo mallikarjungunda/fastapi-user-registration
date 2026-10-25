@@ -9,9 +9,10 @@ The API uses SQLModel with SQLite, Pydantic request/response schemas, and
 
 ## Setup and running
 
-- Install dependencies with `python -m pip install -r requirements.txt`.
-- Install test dependencies with `python -m pip install -r requirements-dev.txt`.
-- Start the development server with `python -m uvicorn app.main:app --reload`.
+- Install runtime and test dependencies with
+  `./.venv/bin/python -m pip install -r requirements-dev.txt`.
+- Start the development server with
+  `./.venv/bin/python -m uvicorn app.main:app --reload`.
 - The root endpoint is `GET /`; FastAPI's interactive docs are at `/docs`.
 - SQLite uses `./users.db` relative to the process working directory. Startup
   creates tables automatically. Do not commit the database or other local data.
@@ -32,8 +33,12 @@ The API uses SQLModel with SQLite, Pydantic request/response schemas, and
 
 ## Validation
 
-- Run `python -m compileall -q app` for a quick syntax check.
-- Run `pytest --cov=app --cov-report=term-missing` for tests and coverage.
+- Run `./.venv/bin/python -m compileall -q app` for a quick syntax check.
+- Run `./.venv/bin/python -m pytest --cov=app --cov-report=term-missing`
+  for tests and coverage.
+- Run `./.venv/bin/python -m pytest tests/functional` for HTTP-level API
+  functional tests written with Gherkin and pytest-bdd. Scenarios are in
+  `tests/functional/features/`; step definitions are grouped by API area.
 - API tests use an isolated temporary SQLite database; do not alter the
   developer's `users.db` during validation.
 
