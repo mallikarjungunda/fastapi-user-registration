@@ -39,6 +39,8 @@ The API uses SQLModel with SQLite, Pydantic request/response schemas, and
 - Run `./.venv/bin/python -m pytest tests/functional` for HTTP-level API
   functional tests written with Gherkin and pytest-bdd. Scenarios are in
   `tests/functional/features/`; step definitions are grouped by API area.
+- Import `postman/fastapi-user-registration.postman_collection.json` into
+  Postman to run the API requests and response assertions.
 - API tests use an isolated temporary SQLite database; do not alter the
   developer's `users.db` during validation.
 

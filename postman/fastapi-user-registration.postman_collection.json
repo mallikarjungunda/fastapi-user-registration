@@ -1,0 +1,563 @@
+{
+  "info": {
+    "_postman_id": "7b534c80-8e3b-4c15-9cc8-1a6d7c596b26",
+    "name": "FastAPI User Registration",
+    "description": "Requests and assertions for every application endpoint. Run the collection in order to exercise the user lifecycle and error cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "missingUserId",
+      "value": "999999"
+    },
+    {
+      "key": "testEmail",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Service",
+      "item": [
+        {
+          "name": "GET Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Returns the service greeting."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns the greeting', function () { pm.expect(pm.response.json()).to.eql({ message: 'Hello' }); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET OpenAPI document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/openapi.json",
+              "host": ["{{baseUrl}}"],
+              "path": ["openapi.json"]
+            },
+            "description": "Returns the generated API schema."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('documents every application route', function () {",
+                  "  const paths = pm.response.json().paths;",
+                  "  pm.expect(paths).to.have.property('/');",
+                  "  pm.expect(paths).to.have.property('/users');",
+                  "  pm.expect(paths).to.have.property('/users/{user_id}');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/docs",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs"]
+            },
+            "description": "Returns the FastAPI Swagger UI."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns an HTML page', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET ReDoc",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/redoc",
+              "host": ["{{baseUrl}}"],
+              "path": ["redoc"]
+            },
+            "description": "Returns the FastAPI ReDoc UI."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns an HTML page', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "POST Register user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ada Lovelace\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"a-long-test-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Creates a user, saves its ID for later requests, and generates a unique email for each run."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('testEmail', `postman-${pm.variables.replaceIn('{{$guid}}')}@example.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('creates the user', function () { pm.response.to.have.status(201); });",
+                  "pm.test('returns only public user fields', function () {",
+                  "  const user = pm.response.json();",
+                  "  pm.expect(user).to.have.property('id');",
+                  "  pm.expect(user.name).to.eql('Ada Lovelace');",
+                  "  pm.expect(user.email).to.eql(pm.collectionVariables.get('testEmail').toLowerCase());",
+                  "  pm.expect(user).not.to.have.property('password');",
+                  "  pm.expect(user).not.to.have.property('password_hash');",
+                  "  pm.collectionVariables.set('userId', user.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?offset=0&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Lists users using the default supported page size and offset."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200 and a list', function () { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.be.an('array'); });",
+                  "pm.test('does not expose password fields', function () {",
+                  "  pm.response.json().forEach(function (user) {",
+                  "    pm.expect(user).not.to.have.property('password');",
+                  "    pm.expect(user).not.to.have.property('password_hash');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET List users with pagination",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?offset=0&limit=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Lists at most one user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200 with no more than one user', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().length).to.be.at.most(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Get registered user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns the registered user', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('userId'))); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Update registered user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ada Byron\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('updates the user name', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().name).to.eql('Ada Byron'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Delete registered user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Deletes the user created by POST Register user. Run the registration request first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('deletes the user with an empty response', function () { pm.response.to.have.status(204); pm.expect(pm.response.text()).to.eql(''); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Validation and errors",
+      "item": [
+        {
+          "name": "POST Register user with invalid email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid User\",\n  \"email\": \"not-an-email\",\n  \"password\": \"a-long-test-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejects invalid input', function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Register duplicate email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate User\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"a-long-test-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Run after POST Register user. Reuses its email with different casing to confirm duplicate detection is case-insensitive."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const email = pm.collectionVariables.get('testEmail');",
+                  "pm.collectionVariables.set('testEmail', email ? email.toUpperCase() : 'duplicate@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejects duplicate email', function () { pm.response.to.have.status(409); pm.expect(pm.response.json().detail).to.eql('Email is already registered'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET List users with invalid pagination",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?offset=0&limit=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejects invalid pagination', function () { pm.response.to.have.status(422); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Get missing user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{missingUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{missingUserId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns user not found', function () { pm.response.to.have.status(404); pm.expect(pm.response.json().detail).to.eql('User not found'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH Update missing user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{missingUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{missingUserId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns user not found', function () { pm.response.to.have.status(404); pm.expect(pm.response.json().detail).to.eql('User not found'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE Delete missing user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{missingUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{missingUserId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns user not found', function () { pm.response.to.have.status(404); pm.expect(pm.response.json().detail).to.eql('User not found'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
